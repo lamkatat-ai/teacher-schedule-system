@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全校教師課表管理系統 - 網頁版</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #e07b39; --primary-light: #f5a45c; --accent: #ef7060; --success: #56ab2f; --warning: #f7971e; --danger: #dc3545; --bg: #fff8f2; --card-bg: #ffffff; --text: #5d4037; --text-light: #a1887f; --border: #f5e6d8; --shadow: 0 4px 6px -1px rgba(224,123,57,0.12); --shadow-lg: 0 10px 15px -3px rgba(224,123,57,0.15); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135deg, #fffbf5 0%, #fff3e8 50%, #ffeedd 100%); color: var(--text); line-height: 1.6; min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #e07b39 0%, #f5a45c 100%); color: white; padding: 1.5rem 2rem; box-shadow: var(--shadow-lg); position: sticky; top: 0; z-index: 100; }
+        .header-content { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-family: 'Space Grotesk', sans-serif; font-size: 1.75rem; font-weight: 700; }
+        .header-actions { display: flex; gap: 1rem; }
+        .connection-status { padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; }
+        .connection-status.connected { background: rgba(86, 171, 47, 0.2); }
+        .connection-status.disconnected { background: rgba(220, 53, 69, 0.2); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .status-dot.connected { background: var(--success); }
+        .status-dot.disconnected { background: var(--danger); }
+        .main-container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; background: var(--card-bg); padding: 0.5rem; border-radius: 12px; box-shadow: var(--shadow); overflow-x: auto; }
+        .tab { padding: 0.75rem 1.5rem; border: none; background: transparent; color: var(--text-light); font-family: 'Noto Sans TC', sans-serif; font-size: 0.95rem; font-weight: 500; cursor: pointer; border-radius: 8px; transition: all 0.2s; white-space: nowrap; }
+        .tab:hover { background: var(--bg); color: var(--text); }
+        .tab.active { background: linear-gradient(135deg, #e07b39 0%, #f5a45c 100%); color: white; box-shadow: 0 2px 8px rgba(224,123,57,0.3); }
+        .card { background: linear-gradient(135deg, #ffffff 0%, #fffcf8 100%); border-radius: 20px; box-shadow: 0 4px 20px rgba(224,123,57,0.08); border: 1px solid rgba(245,230,216,0.7); padding: 1.5rem; margin-bottom: 1.5rem; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid var(--border); }
+        .card-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 600; color: var(--primary); }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
+        .form-input, .form-select { width: 100%; padding: 0.75rem 1rem; border: 2px solid var(--border); border-radius: 8px; font-family: 'Noto Sans TC', sans-serif; font-size: 0.95rem; }
+        .form-input:focus, .form-select:focus { outline: none; border-color: var(--primary); }
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-family: 'Noto Sans TC', sans-serif; font-weight: 500; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; box-shadow: 0 2px 8px rgba(224,123,57,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(224,123,57,0.4); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--accent); color: white; }
+        .btn-secondary { background: var(--bg); color: var(--text); border: 2px solid var(--border); }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.875rem; }
+        .checkbox-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; }
+        .checkbox-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--bg); border-radius: 6px; cursor: pointer; }
+        .checkbox-item:hover { background: var(--border); }
+        .checkbox-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: linear-gradient(135deg, #fff3e8 0%, #fff8f2 100%); font-weight: 600; color: #e07b39; font-size: 0.9rem; }
+        tr:hover { background: rgba(224,123,57,0.05); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { color: white; padding: 1.5rem; border-radius: 16px; transition: transform 0.3s, box-shadow 0.3s; }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 16px 32px rgba(0,0,0,0.15); }
+        .stat-card:nth-child(1) { background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%); box-shadow: 0 8px 24px rgba(255,107,53,0.3); }
+        .stat-card:nth-child(2) { background: linear-gradient(135deg, #56c8e1 0%, #2196f3 100%); box-shadow: 0 8px 24px rgba(33,150,243,0.3); }
+        .stat-card:nth-child(3) { background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%); box-shadow: 0 8px 24px rgba(86,171,47,0.3); }
+        .stat-card:nth-child(4) { background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%); box-shadow: 0 8px 24px rgba(247,151,30,0.3); }
+        .stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 2.5rem; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.15); }
+        .stat-label { color: rgba(255,255,255,0.92); font-size: 0.95rem; font-weight: 500; margin-top: 0.25rem; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.3s; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal { background: var(--card-bg); border-radius: 16px; padding: 2rem; max-width: 700px; width: 90%; transform: scale(0.9); transition: transform 0.3s; max-height: 90vh; overflow-y: auto; }
+        .modal-overlay.active .modal { transform: scale(1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 600; color: var(--primary); }
+        .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light); }
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .badge-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .badge { padding: 0.25rem 0.5rem; background: var(--bg); border-radius: 4px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.25rem; cursor: pointer; }
+        .badge:hover { background: var(--border); }
+        .dept-tag { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
+        .dept-kindergarten { background: #f6ad55; color: white; }
+        .dept-primary-cn { background: #68d391; color: white; }
+        .dept-primary-en { background: #63b3ed; color: white; }
+        .dept-secondary-cn { background: #fc8181; color: white; }
+        .dept-secondary-en { background: #b794f4; color: white; }
+        .dept-assignment { border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+        .dept-assignment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .dept-assignment-title { font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+        .class-subject-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .class-subject-row { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.5rem; background: var(--bg); border-radius: 6px; flex-wrap: wrap; }
+        .class-name { font-weight: 500; min-width: 50px; color: var(--primary); font-size: 0.9rem; padding-top: 0.35rem; }
+        .subject-periods-container { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+        .subject-period-row { display: flex; align-items: center; gap: 0.25rem; }
+        .class-subject-select { width: auto; min-width: 90px; padding: 0.4rem 0.6rem; font-size: 0.85rem; }
+        .period-input { width: 50px; padding: 0.4rem 0.5rem; font-size: 0.85rem; text-align: center; }
+        .period-label { font-size: 0.8rem; color: var(--text-light); }
+        .add-subject-btn { padding: 0.3rem 0.6rem; font-size: 0.75rem; background: var(--primary-light); color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+        .add-subject-btn:hover { background: var(--primary); }
+        .remove-btn { padding: 0.3rem 0.5rem; font-size: 0.75rem; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .loading { text-align: center; padding: 3rem; color: var(--text-light); }
+        .loading::after { content: ''; animation: dots 1.5s infinite; }
+        @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60%, 100% { content: '...'; } }
+        .toast { position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 1.5rem; background: #333; color: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 2000; animation: slideIn 0.3s; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1>🏫 全校教師課表管理系統</h1>
+            <div class="header-actions">
+                <div class="connection-status connected" id="connectionStatus">
+                    <span class="status-dot connected"></span>
+                    <span>已連接</span>
+                </div>
+                <button class="btn btn-secondary" onclick="exportData()">📥 匯出數據</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 匯入數據</button>
+                <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(this)">
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <div class="tabs">
+            <button class="tab active" data-tab="teachers">👨‍🏫 教師列表</button>
+            <button class="tab" data-tab="positions">📋 職務管理</button>
+            <button class="tab" data-tab="subjects">📚 科目管理</button>
+            <button class="tab" data-tab="classes">🏫 班級管理</button>
+            <button class="tab" data-tab="reports">📊 數據報告</button>
+        </div>
+
+        <div id="loading" class="loading">載入中</div>
+
+        <!-- 教師列表 -->
+        <section id="teachers" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">教師列表</h2>
+                    <div style="display:flex;gap:1rem;">
+                        <button class="btn btn-primary" onclick="showModal('teacherModal')">+ 新增教師</button>
+                        <input type="text" class="form-input" style="width: 250px;" placeholder="搜尋教師..." onkeyup="filterTeachers(this.value)">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>姓名</th><th>職務</th><th>任教科目</th><th>任教學部</th><th>授課節數</th><th>操作</th></tr></thead>
+                        <tbody id="teacherTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-value" id="totalTeachers">0</div><div class="stat-label">教師總數</div></div>
+                <div class="stat-card"><div class="stat-value" id="totalPeriods">0</div><div class="stat-label">總授課節數</div></div>
+                <div class="stat-card"><div class="stat-value" id="avgPeriods">0</div><div class="stat-label">平均授課節數</div></div>
+            </div>
+        </section>
+
+        <!-- 職務管理 -->
+        <section id="positions" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">職務管理</h2>
+                    <button class="btn btn-primary btn-sm" onclick="showModal('positionModal')">新增職位</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>職務名稱</th><th>拋節節數</th><th>教師數量</th><th>操作</th></tr></thead>
+                        <tbody id="positionTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 科目管理 -->
+        <section id="subjects" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">科目管理</h2>
+                    <button class="btn btn-primary btn-sm" onclick="showModal('subjectModal')">新增科目</button>
+                </div>
+                <div class="badge-list" id="subjectList"></div>
+            </div>
+        </section>
+
+        <!-- 班級管理 -->
+        <section id="classes" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">班級管理</h2>
+                    <button class="btn btn-primary btn-sm" onclick="showModal('classModal')">新增班級</button>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">選擇學部</label>
+                    <select class="form-select" id="classDepartmentFilter" onchange="renderClassesByDepartment()">
+                        <option value="">全部學部</option>
+                        <option value="kindergarten">幼稚園</option>
+                        <option value="primary-cn">小學中文部</option>
+                        <option value="primary-en">小學英文部</option>
+                        <option value="secondary-cn">中學中文部</option>
+                        <option value="secondary-en">中學英文部</option>
+                    </select>
+                </div>
+                <div class="badge-list" id="classList"></div>
+            </div>
+        </section>
+
+        <!-- 數據報告 -->
+        <section id="reports" class="section">
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-value" id="reportTotalClasses">0</div><div class="stat-label">總班級數</div></div>
+                <div class="stat-card"><div class="stat-value" id="reportTotalDepts">5</div><div class="stat-label">學部數量</div></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h2 class="card-title">各學部授課節數統計</h2></div>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>學部</th><th>任教教師數</th><th>總授課節數</th><th>班級數</th><th>班師比</th></tr></thead>
+                        <tbody id="departmentStatsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h2 class="card-title">教師授課明細</h2></div>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>教師姓名</th><th>職務</th><th>任教學部</th><th>授課節數</th><th>豁免節數</th><th>實際節數</th></tr></thead>
+                        <tbody id="teacherDetailBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h2 class="card-title">班級明細</h2></div>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>班級</th><th>學部</th><th>任教老師</th><th>科目及節數</th><th>已安排節數</th><th>班級總課節</th><th>差異</th><th>狀態</th></tr></thead>
+                        <tbody id="classDetailBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 職務模態框 -->
+    <div class="modal-overlay" id="positionModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">新增職務</h3>
+                <button class="modal-close" onclick="closeModal('positionModal')">&times;</button>
+            </div>
+            <form onsubmit="addPosition(event)">
+                <div class="form-group">
+                    <label class="form-label">職務名稱</label>
+                    <input type="text" class="form-input" id="newPositionName" required placeholder="例如：科組長">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">拋節節數</label>
+                    <input type="number" class="form-input" id="newPositionExemption" min="0" max="18" value="0">
+                </div>
+                <div style="display:flex; gap:1rem; justify-content:flex-end">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('positionModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">新增</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 科目模態框 -->
+    <div class="modal-overlay" id="subjectModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">新增科目</h3>
+                <button class="modal-close" onclick="closeModal('subjectModal')">&times;</button>
+            </div>
+            <form onsubmit="addSubject(event)">
+                <div class="form-group">
+                    <label class="form-label">科目名稱</label>
+                    <input type="text" class="form-input" id="newSubjectName" required placeholder="例如：歷史科">
+                </div>
+                <div style="display:flex; gap:1rem; justify-content:flex-end">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('subjectModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">新增</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 班級模態框 -->
+    <div class="modal-overlay" id="classModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">新增班級</h3>
+                <button class="modal-close" onclick="closeModal('classModal')">&times;</button>
+            </div>
+            <form onsubmit="addClass(event)">
+                <div class="form-group">
+                    <label class="form-label">班級名稱</label>
+                    <input type="text" class="form-input" id="newClassName" required placeholder="例如：初一甲">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">所屬學部</label>
+                    <select class="form-select" id="newClassDepartment" required>
+                        <option value="">-- 選擇學部 --</option>
+                        <option value="kindergarten">幼稚園</option>
+                        <option value="primary-cn">小學中文部</option>
+                        <option value="primary-en">小學英文部</option>
+                        <option value="secondary-cn">中學中文部</option>
+                        <option value="secondary-en">中學英文部</option>
+                    </select>
+                </div>
+                <div style="display:flex; gap:1rem; justify-content:flex-end">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('classModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">新增</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 教師模態框 -->
+    <div class="modal-overlay" id="teacherModal">
+        <div class="modal" style="max-width:700px">
+            <div class="modal-header">
+                <h3 class="modal-title">新增教師</h3>
+                <button class="modal-close" onclick="closeModal('teacherModal')">&times;</button>
+            </div>
+            <form id="teacherForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">教師姓名 *</label>
+                        <input type="text" class="form-input" id="teacherName" required placeholder="請輸入教師姓名">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">職務</label>
+                        <select class="form-select" id="teacherPosition" onchange="autoFillExemption()">
+                            <option value="">-- 選擇職務 --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">任教學部（可多選）*</label>
+                    <div class="checkbox-group" id="departmentCheckboxes"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">任教科目（可多選）*</label>
+                    <div class="checkbox-group" id="subjectCheckboxes"></div>
+                </div>
+                <div class="form-group" id="deptAssignmentsContainer"></div>
+                <div class="form-group">
+                    <label class="form-label">拋節（豁免上課節數）</label>
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <input type="number" class="form-input" id="exemptionPeriods" min="0" max="18" value="0" style="width:100px;" oninput="document.getElementById('periodDisplay').textContent=this.value">
+                        <span id="periodDisplay">0</span><span>節</span>
+                    </div>
+                </div>
+                <div style="display:flex;gap:1rem;justify-content:flex-end">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('teacherModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">新增</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 編輯教師模態框 -->
+    <div class="modal-overlay" id="editTeacherModal">
+        <div class="modal" style="max-width:700px">
+            <div class="modal-header">
+                <h3 class="modal-title">編輯教師</h3>
+                <button class="modal-close" onclick="closeModal('editTeacherModal')">&times;</button>
+            </div>
+            <form id="editTeacherForm">
+                <input type="hidden" id="editTeacherId">
+                <div class="form-group">
+                    <label class="form-label">教師姓名 *</label>
+                    <input type="text" class="form-input" id="editTeacherName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">職務</label>
+                    <select class="form-select" id="editTeacherPosition" onchange="autoFillEditExemption()">
+                        <option value="">-- 選擇職位 --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">任教學部</label>
+                    <div class="checkbox-group" id="editDepartmentCheckboxes"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">任教科目</label>
+                    <div class="checkbox-group" id="editSubjectCheckboxes"></div>
+                </div>
+                <div class="form-group" id="editDeptAssignments"></div>
+                <div class="form-group">
+                    <label class="form-label">拋節（豁免上課節數）</label>
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <input type="number" class="form-input" id="editExemptionPeriods" min="0" max="18" value="0" style="width:100px;" oninput="document.getElementById('editPeriodDisplay').textContent=this.value">
+                        <span id="editPeriodDisplay">0</span><span>節</span>
+                    </div>
+                </div>
+                <div style="display:flex; gap:1rem; justify-content:flex-end">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editTeacherModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        const deptNames = {kindergarten:'幼稚園','primary-cn':'小學中文部','primary-en':'小學英文部','secondary-cn':'中學中文部','secondary-en':'中學英文部'};
+        
+        let data = {positions:[], subjects:[], classes:[], teachers:[]};
+        let ws;
+
+        // 初始化
+        async function init() {
+            await loadData();
+            setupEventListeners();
+            setupWebSocket();
+        }
+
+        // 載入數據
+        async function loadData() {
+            try {
+                const res = await fetch(`${API_URL}/data`);
+                data = await res.json();
+                document.getElementById('loading').style.display = 'none';
+                renderAll();
+            } catch (err) {
+                showToast('載入數據失敗: ' + err.message, 'error');
+            }
+        }
+
+        // 設置 WebSocket
+        function setupWebSocket() {
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${wsProtocol}//${location.host}`);
+            
+            ws.onopen = () => {
+                updateConnectionStatus(true);
+            };
+            
+            ws.onclose = () => {
+                updateConnectionStatus(false);
+            };
+            
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                if (msg.type) {
+                    loadData(); // 重新載入數據
+                }
+            };
+        }
+
+        function updateConnectionStatus(connected) {
+            const status = document.getElementById('connectionStatus');
+            if (connected) {
+                status.className = 'connection-status connected';
+                status.innerHTML = '<span class="status-dot connected"></span><span>已連接</span>';
+            } else {
+                status.className = 'connection-status disconnected';
+                status.innerHTML = '<span class="status-dot disconnected"></span><span>未連接</span>';
+            }
+        }
+
+        // 設置事件監聽
+        function setupEventListeners() {
+            // 標籤切換
+            document.querySelectorAll('.tab').forEach(t => {
+                t.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+                    document.querySelectorAll('.section').forEach(x => x.classList.remove('active'));
+                    t.classList.add('active');
+                    document.getElementById(t.dataset.tab).classList.add('active');
+                    if(t.dataset.tab === 'reports') renderReports();
+                });
+            });
+
+            // 表單提交
+            document.getElementById('teacherForm').addEventListener('submit', addTeacher);
+            document.getElementById('editTeacherForm').addEventListener('submit', saveEditTeacher);
+        }
+
+        // 渲染所有
+        function renderAll() {
+            renderPositions();
+            renderSubjects();
+            renderClasses();
+            renderTeachers();
+            renderStats();
+        }
+
+        // 渲染職務
+        function renderPositions() {
+            document.getElementById('positionTableBody').innerHTML = data.positions.map(p => 
+                `<tr><td>${p.name}</td><td>${p.exemption}</td><td>${data.teachers.filter(t => t.positionId == p.id).length}</td><td><button class="btn btn-danger btn-sm" onclick="deletePosition(${p.id})">刪除</button></td></tr>`
+            ).join('');
+
+            const posOptions = '<option value="">-- 選擇職務 --</option>' + data.positions.map(p => 
+                `<option value="${p.id}" data-exemption="${p.exemption}">${p.name}</option>`
+            ).join('');
+            
+            document.getElementById('teacherPosition').innerHTML = posOptions;
+            document.getElementById('editTeacherPosition').innerHTML = posOptions;
+        }
+
+        // 渲染科目
+        function renderSubjects() {
+            document.getElementById('subjectList').innerHTML = data.subjects.map(s => 
+                `<span class="badge" onclick="deleteSubject(${s.id})">${s.name} ✕</span>`
+            ).join('');
+
+            const subjCheckboxes = data.subjects.map(s => 
+                `<label class="checkbox-item"><input type="checkbox" name="subject" value="${s.id}"> ${s.name}</label>`
+            ).join('');
+            document.getElementById('subjectCheckboxes').innerHTML = subjCheckboxes;
+            document.getElementById('editSubjectCheckboxes').innerHTML = data.subjects.map(s => 
+                `<label class="checkbox-item"><input type="checkbox" name="editSubject" value="${s.id}"> ${s.name}</label>`
+            ).join('');
+
+            // 添加事件監聽
+            document.querySelectorAll('input[name="subject"]').forEach(cb => cb.addEventListener('change', updateClassSubjectLists));
+            document.querySelectorAll('input[name="editSubject"]').forEach(cb => cb.addEventListener('change', updateEditClassSubjectLists));
+        }
+
+        // 渲染班級
+        function renderClasses() {
+            renderClassesByDepartment();
+        }
+
+        function renderClassesByDepartment() {
+            const f = document.getElementById('classDepartmentFilter').value;
+            const cs = f ? data.classes.filter(c => c.department === f) : data.classes;
+            document.getElementById('classList').innerHTML = cs.map(c => 
+                `<span class="badge" onclick="deleteClass(${c.id})">${c.name} (${deptNames[c.department]}) ✕</span>`
+            ).join('');
+        }
+
+        // 渲染教師
+        function renderTeachers() {
+            const tbody = document.getElementById('teacherTableBody');
+            if(data.teachers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-light)">暫無教師資料</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.teachers.map(t => {
+                const pos = data.positions.find(p => p.id == t.positionId);
+                const posName = pos ? pos.name : '-';
+                const subjects = t.subjectIds ? data.subjects.filter(s => t.subjectIds.includes(s.id)).map(s => s.name).join(', ') : '-';
+                const depts = t.departments ? t.departments.map(d => `<span class="dept-tag dept-${d}">${deptNames[d]}</span>`).join(' ') : '-';
+                const periods = t.deptPeriods ? Object.values(t.deptPeriods).reduce((a,b) => a+b, 0) : 0;
+
+                let detailInfo = '';
+                if(t.classSubjectPeriods && Object.keys(t.classSubjectPeriods).length > 0) {
+                    const details = [];
+                    Object.entries(t.classSubjectPeriods).forEach(([classId, subjects]) => {
+                        const cls = data.classes.find(c => c.id === parseInt(classId));
+                        if(cls) {
+                            const subjectDetails = Object.entries(subjects).map(([sId, p]) => {
+                                const subj = data.subjects.find(s => s.id === parseInt(sId));
+                                return (subj ? subj.name : '') + '(' + p + '節)';
+                            }).join(', ');
+                            details.push(cls.name + ': ' + subjectDetails);
+                        }
+                    });
+                    if(details.length > 0) detailInfo = '<br><small style="color:var(--text-light);">' + details.join('; ') + '</small>';
+                }
+
+                return `<tr>
+                    <td><strong>${t.name}</strong></td>
+                    <td>${posName}</td>
+                    <td>${subjects}</td>
+                    <td>${depts}</td>
+                    <td>${periods}${detailInfo}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="editTeacher(${t.id})">編輯</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteTeacher(${t.id})">刪除</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // 渲染統計
+        function renderStats() {
+            document.getElementById('totalTeachers').textContent = data.teachers.length;
+            const total = data.teachers.reduce((sum, t) => sum + (t.deptPeriods ? Object.values(t.deptPeriods).reduce((a,b) => a+b, 0) : 0), 0);
+            document.getElementById('totalPeriods').textContent = total;
+            document.getElementById('avgPeriods').textContent = data.teachers.length ? Math.round(total / data.teachers.length) : 0;
+            document.getElementById('reportTotalClasses').textContent = data.classes.length;
+        }
+
+        // 渲染報告
+        function renderReports() {
+            const depts = ['kindergarten', 'primary-cn', 'primary-en', 'secondary-cn', 'secondary-en'];
+            document.getElementById('departmentStatsBody').innerHTML = depts.map(d => {
+                const teachers = data.teachers.filter(t => t.departments && t.departments.includes(d));
+                const totalPeriods = teachers.reduce((sum, t) => sum + (t.deptPeriods?.[d] || 0), 0);
+                const classCount = data.classes.filter(c => c.department === d).length;
+                const ratio = teachers.length ? (totalPeriods / teachers.length).toFixed(1) : '-';
+                return `<tr><td><span class="dept-tag dept-${d}">${deptNames[d]}</span></td><td>${teachers.length}</td><td>${totalPeriods}</td><td>${classCount}</td><td>${ratio}</td></tr>`;
+            }).join('');
+
+            document.getElementById('teacherDetailBody').innerHTML = data.teachers.map(t => {
+                const pos = data.positions.find(p => p.id == t.positionId);
+                const posName = pos ? pos.name : '-';
+                const depts = t.departments ? t.departments.map(d => `<span class="dept-tag dept-${d}">${deptNames[d]}</span>`).join(' ') : '-';
+                const periods = t.deptPeriods ? Object.values(t.deptPeriods).reduce((a,b) => a+b, 0) : 0;
+                const exemption = t.exemption || 0;
+                return `<tr><td>${t.name}</td><td>${posName}</td><td>${depts}</td><td>${periods}</td><td>${exemption}</td><td>${periods - exemption}</td></tr>`;
+            }).join('');
+
+            renderClassDetails();
+        }
+
+        function renderClassDetails() {
+            const tbody = document.getElementById('classDetailBody');
+            tbody.innerHTML = data.classes.map(cls => {
+                const teacherSubjects = [];
+                let totalPeriods = 0;
+
+                data.teachers.forEach(t => {
+                    if(t.classSubjectPeriods && t.classSubjectPeriods[cls.id]) {
+                        const subjects = Object.entries(t.classSubjectPeriods[cls.id]);
+                        if(subjects.length > 0) {
+                            const subjectDetails = subjects.map(([sId, p]) => {
+                                const subj = data.subjects.find(s => s.id === parseInt(sId));
+                                totalPeriods += p;
+                                return (subj ? subj.name : '?') + '(' + p + ')';
+                            }).join(', ');
+                            teacherSubjects.push({teacher: t, subjects: subjectDetails, periods: subjects.reduce((sum, [,p]) => sum + p, 0)});
+                        }
+                    }
+                });
+
+                const deptTag = `<span class="dept-tag dept-${cls.department}">${deptNames[cls.department]}</span>`;
+                const classTotalPeriods = cls.totalPeriods || 0;
+                const diff = classTotalPeriods - totalPeriods;
+                const diffDisplay = diff > 0 ? `<span style="color:var(--danger);font-weight:600;">-${diff}</span>` : diff < 0 ? `<span style="color:var(--warning);font-weight:600;">+${Math.abs(diff)}</span>` : '<span style="color:var(--success);">0</span>';
+
+                if(teacherSubjects.length === 0) {
+                    return `<tr style="background:rgba(239,112,96,0.1);"><td><strong>${cls.name}</strong></td><td>${deptTag}</td><td style="color:var(--danger);font-weight:600;">無任教老師</td><td>-</td><td>0</td><td><input type="number" class="form-input" style="width:60px;padding:0.3rem;" value="${classTotalPeriods}" onchange="updateClassTotalPeriods(${cls.id}, this.value)"></td><td>-</td><td><span style="background:var(--danger);color:white;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.8rem;">⚠ 缺老師</span></td></tr>`;
+                }
+
+                const teacherInfo = teacherSubjects.map(ts => ts.teacher.name).join('<br>');
+                const subjectInfo = teacherSubjects.map(ts => ts.teacher.name + ': ' + ts.subjects).join('<br>');
+                const status = totalPeriods > 0 ? (diff === 0 ? '<span style="background:var(--success);color:white;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.8rem;">✓ 正常</span>' : '<span style="background:var(--warning);color:white;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.8rem;">⚠ 有差異</span>') : '<span style="background:var(--warning);color:white;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.8rem;">⚠ 無節數</span>';
+
+                return `<tr><td><strong>${cls.name}</strong></td><td>${deptTag}</td><td>${teacherInfo}</td><td style="font-size:0.85rem;">${subjectInfo}</td><td><strong>${totalPeriods}</strong></td><td><input type="number" class="form-input" style="width:60px;padding:0.3rem;" value="${classTotalPeriods}" onchange="updateClassTotalPeriods(${cls.id}, this.value)"></td><td>${diffDisplay}</td><td>${status}</td></tr>`;
+            }).join('');
+        }
+
+        // 模態框
+        function showModal(id) {
+            document.getElementById(id).classList.add('active');
+            if(id === 'teacherModal') {
+                setupDepartmentCheckboxes();
+            }
+        }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        // 設置學部複選框
+        function setupDepartmentCheckboxes() {
+            const html = Object.entries(deptNames).map(([key, name]) => 
+                `<label class="checkbox-item"><input type="checkbox" name="department" value="${key}"> ${name}</label>`
+            ).join('');
+            document.getElementById('departmentCheckboxes').innerHTML = html;
+            document.getElementById('editDepartmentCheckboxes').innerHTML = Object.entries(deptNames).map(([key, name]) => 
+                `<label class="checkbox-item"><input type="checkbox" name="editDepartment" value="${key}"> ${name}</label>`
+            ).join('');
+
+            document.querySelectorAll('input[name="department"]').forEach(cb => cb.addEventListener('change', updateDeptAssignments));
+            document.querySelectorAll('input[name="editDepartment"]').forEach(cb => cb.addEventListener('change', updateEditDeptAssignments));
+        }
+
+        // 自動填充拋節
+        function autoFillExemption() {
+            const sel = document.getElementById('teacherPosition');
+            const opt = sel.options[sel.selectedIndex];
+            const ex = opt.dataset.exemption || 0;
+            document.getElementById('exemptionPeriods').value = ex;
+            document.getElementById('periodDisplay').textContent = ex;
+        }
+
+        function autoFillEditExemption() {
+            const sel = document.getElementById('editTeacherPosition');
+            const opt = sel.options[sel.selectedIndex];
+            const ex = opt.dataset.exemption || 0;
+            document.getElementById('editExemptionPeriods').value = ex;
+            document.getElementById('editPeriodDisplay').textContent = ex;
+        }
+
+        // 更新學部分配
+        function updateDeptAssignments() {
+            const sel = Array.from(document.querySelectorAll('input[name="department"]:checked')).map(cb => cb.value);
+            const c = document.getElementById('deptAssignmentsContainer');
+            c.innerHTML = '';
+            sel.forEach(d => {
+                const div = document.createElement('div');
+                div.className = 'dept-assignment';
+                div.innerHTML = `<div class="dept-assignment-header"><span class="dept-assignment-title"><span class="dept-tag dept-${d}">${deptNames[d]}</span></span></div><div class="form-group"><label class="form-label">任教班級與科目</label><div class="class-subject-list" data-dept="${d}"></div></div>`;
+                c.appendChild(div);
+            });
+            updateClassSubjectLists();
+        }
+
+        function updateClassSubjectLists() {
+            const selectedSubjects = Array.from(document.querySelectorAll('input[name="subject"]:checked')).map(cb => parseInt(cb.value));
+            document.querySelectorAll('.class-subject-list').forEach(list => {
+                const dept = list.dataset.dept;
+                const deptClasses = data.classes.filter(c => c.department === dept);
+                if(deptClasses.length === 0) {
+                    list.innerHTML = '<span style="color:var(--text-light);font-size:0.9rem;">此學部暫無班級</span>';
+                    return;
+                }
+                if(selectedSubjects.length === 0) {
+                    list.innerHTML = '<span style="color:var(--text-light);font-size:0.9rem;">請先選擇任教科目</span>';
+                    return;
+                }
+                list.innerHTML = deptClasses.map(cls => {
+                    const subjectOptions = selectedSubjects.map(sId => {
+                        const subj = data.subjects.find(s => s.id === sId);
+                        return `<option value="${sId}">${subj ? subj.name : ''}</option>`;
+                    }).join('');
+                    return `<div class="class-subject-row"><span class="class-name">${cls.name}</span><div class="subject-periods-container" data-class="${cls.id}"><div class="subject-period-row"><select class="form-select class-subject-select"><option value="">-- 科目 --</option>${subjectOptions}</select><input type="number" class="form-input period-input" min="0" max="20" value="0" placeholder="節"><span class="period-label">節</span></div></div><button type="button" class="add-subject-btn" onclick="addSubjectRow(${cls.id})">+ 加科目</button></div>`;
+                }).join('');
+            });
+        }
+
+        function addSubjectRow(classId) {
+            const selectedSubjects = Array.from(document.querySelectorAll('input[name="subject"]:checked')).map(cb => parseInt(cb.value));
+            const container = document.querySelector(`.subject-periods-container[data-class="${classId}"]`);
+            if(!container) return;
+            const subjectOptions = selectedSubjects.map(sId => {
+                const subj = data.subjects.find(s => s.id === sId);
+                return `<option value="${sId}">${subj ? subj.name : ''}</option>`;
+            }).join('');
+            const newRow = document.createElement('div');
+            newRow.className = 'subject-period-row';
+            newRow.innerHTML = `<select class="form-select class-subject-select"><option value="">-- 科目 --</option>${subjectOptions}</select><input type="number" class="form-input period-input" min="0" max="20" value="0" placeholder="節"><span class="period-label">節</span><button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>`;
+            container.appendChild(newRow);
+        }
+
+        // API 操作
+        async function addPosition(e) {
+            e.preventDefault();
+            const name = document.getElementById('newPositionName').value.trim();
+            const exemption = parseInt(document.getElementById('newPositionExemption').value) || 0;
+            if(!name) return;
+
+            try {
+                await fetch(`${API_URL}/positions`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name, exemption})
+                });
+                closeModal('positionModal');
+                document.getElementById('newPositionName').value = '';
+                document.getElementById('newPositionExemption').value = '0';
+                showToast('職務已新增', 'success');
+            } catch(err) {
+                showToast('新增失敗: ' + err.message, 'error');
+            }
+        }
+
+        async function deletePosition(id) {
+            if(!confirm('確定刪除此職位？')) return;
+            try {
+                await fetch(`${API_URL}/positions/${id}`, {method: 'DELETE'});
+                showToast('職務已刪除', 'success');
+            } catch(err) {
+                showToast('刪除失敗: ' + err.message, 'error');
+            }
+        }
+
+        async function addSubject(e) {
+            e.preventDefault();
+            const name = document.getElementById('newSubjectName').value.trim();
+            if(!name) return;
+
+            try {
+                await fetch(`${API_URL}/subjects`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name})
+                });
+                closeModal('subjectModal');
+                document.getElementById('newSubjectName').value = '';
+                showToast('科目已新增', 'success');
+            } catch(err) {
+                showToast('新增失敗: ' + err.message, 'error');
+            }
+        }
+
+        async function deleteSubject(id) {
+            if(!confirm('確定刪除此科目？')) return;
+            try {
+                await fetch(`${API_URL}/subjects/${id}`, {method: 'DELETE'});
+                showToast('科目已刪除', 'success');
+            } catch(err) {
+                showToast('刪除失敗: ' + err.message, 'error');
+            }
+        }
+
+        async function addClass(e) {
+            e.preventDefault();
+            const name = document.getElementById('newClassName').value.trim();
+            const department = document.getElementById('newClassDepartment').value;
+            if(!name || !department) return;
+
+            try {
+                await fetch(`${API_URL}/classes`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name, department})
+                });
+                closeModal('classModal');
+                document.getElementById('newClassName').value = '';
+                document.getElementById('newClassDepartment').value = '';
+                showToast('班級已新增', 'success');
+            } catch(err) {
+                showToast('新增失敗: ' + err.message, 'error');
+            }
+        }
+
+        async function deleteClass(id) {
+            if(!confirm('確定刪除此班級？')) return;
+            try {
+                await fetch(`${API_URL}/classes/${id}`, {method: 'DELETE'});
+                showToast('班級已刪除', 'success');
+            } catch(err) {
+                showToast('刪除失敗: ' + err.message, 'error');
+            }
+        }
+
+        async function updateClassTotalPeriods(classId, value) {
+            try {
+                await fetch(`${API_URL}/classes/${classId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({totalPeriods: parseInt(value) || 0})
+                });
+            } catch(err) {
+                showToast('更新失敗: ' + err.message, 'error');
+            }
+        }
+
+        async function addTeacher(e) {
+            e.preventDefault();
+            const name = document.getElementById('teacherName').value.trim();
+            const positionId = document.getElementById('teacherPosition').value;
+            const subjectIds = Array.from(document.querySelectorAll('input[name="subject"]:checked')).map(cb => parseInt(cb.value));
+            const departments = Array.from(document.querySelectorAll('input[name="department"]:checked')).map(cb => cb.value);
+            
+            if(!name) { alert('請輸入教師姓名'); return; }
+            if(departments.length === 0) { alert('請選擇至少一個任教學部'); return; }
+            if(subjectIds.length === 0) { alert('請選擇至少一個任教科目'); return; }
+
+            const classSubjectPeriods = {};
+            document.querySelectorAll('.class-subject-row').forEach(row => {
+                const container = row.querySelector('.subject-periods-container');
+                if(!container) return;
+                const classId = container.dataset.class;
+                container.querySelectorAll('.subject-period-row').forEach(sr => {
+                    const sel = sr.querySelector('.class-subject-select');
+                    const periodInput = sr.querySelector('.period-input');
+                    if(sel && sel.value && periodInput) {
+                        const subjectId = parseInt(sel.value);
+                        const periods = parseInt(periodInput.value) || 0;
+                        if(periods > 0) {
+                            if(!classSubjectPeriods[classId]) classSubjectPeriods[classId] = {};
+                            classSubjectPeriods[classId][subjectId] = periods;
+                        }
+                    }
+                });
+            });
+
+            const exemption = parseInt(document.getElementById('exemptionPeriods').value) || 0;
+
+            try {
+                await fetch(`${API_URL}/teachers`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name, positionId, exemption, departments, subjectIds, classSubjectPeriods, homeroomClasses: []})
+                });
+                closeModal('teacherModal');
+                document.getElementById('teacherForm').reset();
+                document.getElementById('deptAssignmentsContainer').innerHTML = '';
+                document.getElementById('periodDisplay').textContent = '0';
+                showToast('教師已新增', 'success');
+            } catch(err) {
+                showToast('新增失敗: ' + err.message, 'error');
+            }
+        }
+
+        async function editTeacher(id) {
+            const t = data.teachers.find(x => x.id === id);
+            if(!t) return;
+
+            setupDepartmentCheckboxes();
+            
+            document.getElementById('editTeacherId').value = t.id;
+            document.getElementById('editTeacherName').value = t.name;
+            document.getElementById('editTeacherPosition').value = t.positionId || '';
+            document.getElementById('editExemptionPeriods').value = t.exemption || 0;
+            document.getElementById('editPeriodDisplay').textContent = t.exemption || 0;
+
+            document.querySelectorAll('input[name="editSubject"]').forEach(cb => {
+                cb.checked = t.subjectIds && t.subjectIds.includes(parseInt(cb.value));
+            });
+            document.querySelectorAll('input[name="editDepartment"]').forEach(cb => {
+                cb.checked = t.departments && t.departments.includes(cb.value);
+            });
+
+            showModal('editTeacherModal');
+            setTimeout(() => updateEditDeptAssignments(), 100);
+        }
+
+        function updateEditDeptAssignments() {
+            const t = data.teachers.find(x => x.id === parseInt(document.getElementById('editTeacherId').value));
+            if(!t) return;
+
+            const sel = Array.from(document.querySelectorAll('input[name="editDepartment"]:checked')).map(cb => cb.value);
+            const c = document.getElementById('editDeptAssignments');
+            c.innerHTML = '';
+            sel.forEach(d => {
+                const div = document.createElement('div');
+                div.className = 'dept-assignment';
+                div.innerHTML = `<div class="dept-assignment-header"><span class="dept-assignment-title"><span class="dept-tag dept-${d}">${deptNames[d]}</span></span></div><div class="form-group"><label class="form-label">任教班級與科目</label><div class="edit-class-subject-list" data-dept="${d}"></div></div>`;
+                c.appendChild(div);
+            });
+            updateEditClassSubjectLists();
+        }
+
+        function updateEditClassSubjectLists() {
+            const t = data.teachers.find(x => x.id === parseInt(document.getElementById('editTeacherId').value));
+            if(!t) return;
+
+            const selectedSubjects = Array.from(document.querySelectorAll('input[name="editSubject"]:checked')).map(cb => parseInt(cb.value));
+            document.querySelectorAll('.edit-class-subject-list').forEach(list => {
+                const dept = list.dataset.dept;
+                const deptClasses = data.classes.filter(c => c.department === dept);
+                if(deptClasses.length === 0) {
+                    list.innerHTML = '<span style="color:var(--text-light);font-size:0.9rem;">此學部暫無班級</span>';
+                    return;
+                }
+                if(selectedSubjects.length === 0) {
+                    list.innerHTML = '<span style="color:var(--text-light);font-size:0.9rem;">請先選擇任教科目</span>';
+                    return;
+                }
+                list.innerHTML = deptClasses.map(cls => {
+                    const classData = t?.classSubjectPeriods?.[cls.id] || {};
+                    const subjectOptions = selectedSubjects.map(sId => {
+                        const subj = data.subjects.find(s => s.id === sId);
+                        return `<option value="${sId}">${subj ? subj.name : ''}</option>`;
+                    }).join('');
+                    
+                    const existingSubjects = Object.entries(classData);
+                    const subjectRows = existingSubjects.length > 0 ? existingSubjects.map(([sId, periods]) => {
+                        return `<div class="subject-period-row"><select class="form-select class-subject-select"><option value="">-- 科目 --</option>${selectedSubjects.map(sId2 => {
+                            const subj2 = data.subjects.find(s => s.id === sId2);
+                            return `<option value="${sId2}" ${parseInt(sId) === sId2 ? 'selected' : ''}>${subj2 ? subj2.name : ''}</option>`;
+                        }).join('')}</select><input type="number" class="form-input period-input" min="0" max="20" value="${periods}" placeholder="節"><span class="period-label">節</span><button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button></div>`;
+                    }).join('') : `<div class="subject-period-row"><select class="form-select class-subject-select"><option value="">-- 科目 --</option>${subjectOptions}</select><input type="number" class="form-input period-input" min="0" max="20" value="0" placeholder="節"><span class="period-label">節</span></div>`;
+                    
+                    return `<div class="class-subject-row"><span class="class-name">${cls.name}</span><div class="subject-periods-container edit-subject-periods-container" data-class="${cls.id}">${subjectRows}</div><button type="button" class="add-subject-btn" onclick="addEditSubjectRow(${cls.id})">+ 加科目</button></div>`;
+                }).join('');
+            });
+        }
+
+        function addEditSubjectRow(classId) {
+            const selectedSubjects = Array.from(document.querySelectorAll('input[name="editSubject"]:checked')).map(cb => parseInt(cb.value));
+            const container = document.querySelector(`.edit-subject-periods-container[data-class="${classId}"]`);
+            if(!container) return;
+            const subjectOptions = selectedSubjects.map(sId => {
+                const subj = data.subjects.find(s => s.id === sId);
+                return `<option value="${sId}">${subj ? subj.name : ''}</option>`;
+            }).join('');
+            const newRow = document.createElement('div');
+            newRow.className = 'subject-period-row';
+            newRow.innerHTML = `<select class="form-select class-subject-select"><option value="">-- 科目 --</option>${subjectOptions}</select><input type="number" class="form-input period-input" min="0" max="20" value="0" placeholder="節"><span class="period-label">節</span><button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>`;
+            container.appendChild(newRow);
+        }
+
+        async function saveEditTeacher(e) {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('editTeacherId').value);
+            const name = document.getElementById('editTeacherName').value.trim();
+            const positionId = document.getElementById('editTeacherPosition').value;
+            const subjectIds = Array.from(document.querySelectorAll('input[name="editSubject"]:checked')).map(cb => parseInt(cb.value));
+            const departments = Array.from(document.querySelectorAll('input[name="editDepartment"]:checked')).map(cb => cb.value);
+            const exemption = parseInt(document.getElementById('editExemptionPeriods').value) || 0;
+
+            const classSubjectPeriods = {};
+            document.querySelectorAll('.edit-class-subject-list .class-subject-row').forEach(row => {
+                const container = row.querySelector('.subject-periods-container');
+                if(!container) return;
+                const classId = container.dataset.class;
+                container.querySelectorAll('.subject-period-row').forEach(sr => {
+                    const sel = sr.querySelector('.class-subject-select');
+                    const periodInput = sr.querySelector('.period-input');
+                    if(sel && sel.value && periodInput) {
+                        const subjectId = parseInt(sel.value);
+                        const periods = parseInt(periodInput.value) || 0;
+                        if(periods > 0) {
+                            if(!classSubjectPeriods[classId]) classSubjectPeriods[classId] = {};
+                            classSubjectPeriods[classId][subjectId] = periods;
+                        }
+                    }
+                });
+            });
+
+            try {
+                await fetch(`${API_URL}/teachers/${id}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name, positionId, exemption, departments, subjectIds, classSubjectPeriods, homeroomClasses: []})
+                });
+                closeModal('editTeacherModal');
+                showToast('教師資料已更新', 'success');
+            } catch(err) {
+                showToast('更新失敗: ' + err.message, 'error');
+            }
+        }
+
+        async function deleteTeacher(id) {
+            if(!confirm('確定刪除此教師？')) return;
+            try {
+                await fetch(`${API_URL}/teachers/${id}`, {method: 'DELETE'});
+                showToast('教師已刪除', 'success');
+            } catch(err) {
+                showToast('刪除失敗: ' + err.message, 'error');
+            }
+        }
+
+        function filterTeachers(query) {
+            const q = query.toLowerCase();
+            document.querySelectorAll('#teacherTableBody tr').forEach(row => {
+                const name = row.cells[0].textContent.toLowerCase();
+                row.style.display = name.includes(q) ? '' : 'none';
+            });
+        }
+
+        // 匯出數據
+        async function exportData() {
+            try {
+                const res = await fetch(`${API_URL}/export`);
+                const data = await res.json();
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `教師課表數據_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast('數據已匯出', 'success');
+            } catch(err) {
+                showToast('匯出失敗: ' + err.message, 'error');
+            }
+        }
+
+        // 匯入數據
+        async function importData(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    await fetch(`${API_URL}/import`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(imported)
+                    });
+                    showToast('數據已匯入', 'success');
+                } catch(err) {
+                    showToast('匯入失敗: ' + err.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
+        // Toast 提示
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // 啟動
+        init();
+    </script>
+</body>
+</html>

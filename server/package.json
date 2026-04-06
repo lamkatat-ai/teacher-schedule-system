@@ -1,0 +1,22 @@
+{
+  "name": "teacher-schedule-system",
+  "version": "1.0.0",
+  "description": "全校教師課表管理系統 - 網頁版",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "ws": "^8.14.2",
+    "sql.js": "^1.10.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["education", "schedule", "teacher"],
+  "author": "達",
+  "license": "MIT"
+}
