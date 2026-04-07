@@ -423,17 +423,32 @@
             }
         }
 
-        // 設置 WebSocket
+        // 設置 WebSocket（帶自動重連）
+        let wsReconnectTimer = null;
         function setupWebSocket() {
             const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
             ws = new WebSocket(`${wsProtocol}//${location.host}`);
             
             ws.onopen = () => {
                 updateConnectionStatus(true);
+                // 連接成功，清除重連計時器
+                if (wsReconnectTimer) { clearTimeout(wsReconnectTimer); wsReconnectTimer = null; }
+            };
+            
+            ws.onerror = (err) => {
+                // WebSocket 錯誤：顯示警告但不中斷使用
+                updateConnectionStatus(false);
             };
             
             ws.onclose = () => {
                 updateConnectionStatus(false);
+                // 30秒後自動嘗試重連
+                if (!wsReconnectTimer) {
+                    wsReconnectTimer = setTimeout(() => {
+                        wsReconnectTimer = null;
+                        if (document.visibilityState !== 'hidden') setupWebSocket();
+                    }, 30000);
+                }
             };
             
             ws.onmessage = (event) => {
@@ -451,7 +466,7 @@
                 status.innerHTML = '<span class="status-dot connected"></span><span>已連接</span>';
             } else {
                 status.className = 'connection-status disconnected';
-                status.innerHTML = '<span class="status-dot disconnected"></span><span>未連接</span>';
+                status.innerHTML = '<span class="status-dot disconnected"></span><span>⚠ 即時更新離線（仍可正常使用）</span>';
             }
         }
 
